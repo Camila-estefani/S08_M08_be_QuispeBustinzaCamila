@@ -1,10 +1,24 @@
 const express = require('express');
 const sql = require('mssql');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Swagger config
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: { title: 'VeterinariaDB API', version: '1.0.0', description: 'API para gestión de mascotas' },
+    servers: [{ url: 'http://localhost:3000' }]
+  },
+  apis: ['./index.js']
+};
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const dbConfig = {
     user: 'sa',
@@ -18,7 +32,15 @@ const dbConfig = {
     }
 };
 
-// 1. GET: Listar todas las mascotas
+/**
+ * @swagger
+ * /mascotas:
+ *   get:
+ *     summary: Listar todas las mascotas
+ *     responses:
+ *       200:
+ *         description: Lista de mascotas
+ */
 app.get('/mascotas', async (req, res) => {
     try {
         let pool = await sql.connect(dbConfig);
@@ -29,7 +51,26 @@ app.get('/mascotas', async (req, res) => {
     }
 });
 
-// 2. POST: Agregar una mascota
+/**
+ * @swagger
+ * /mascotas:
+ *   post:
+ *     summary: Agregar una mascota
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre: { type: string }
+ *               especie: { type: string }
+ *               edad: { type: integer }
+ *               nombre_dueno: { type: string }
+ *     responses:
+ *       200:
+ *         description: Mascota agregada
+ */
 app.post('/mascotas', async (req, res) => {
     const { nombre, especie, edad, nombre_dueno } = req.body;
     try {
@@ -46,7 +87,20 @@ app.post('/mascotas', async (req, res) => {
     }
 });
 
-// 3. DELETE: Eliminar una mascota
+/**
+ * @swagger
+ * /mascotas/{id}:
+ *   delete:
+ *     summary: Eliminar una mascota
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Mascota eliminada
+ */
 app.delete('/mascotas/:id', async (req, res) => {
     try {
         let pool = await sql.connect(dbConfig);
@@ -58,7 +112,31 @@ app.delete('/mascotas/:id', async (req, res) => {
         res.status(500).send(err.message);
     }
 });
-// 4. PUT: Editar una mascota
+/**
+ * @swagger
+ * /mascotas/update/{id}:
+ *   post:
+ *     summary: Actualizar una mascota
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre: { type: string }
+ *               especie: { type: string }
+ *               edad: { type: integer }
+ *               nombre_dueno: { type: string }
+ *     responses:
+ *       200:
+ *         description: Mascota actualizada
+ */
 app.post('/mascotas/update/:id', async (req, res) => {
     const { nombre, especie, edad, nombre_dueno } = req.body;
     try {
